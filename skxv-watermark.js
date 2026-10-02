@@ -304,28 +304,87 @@
         }
         mood.holdUntil = mood.clock + random(0.9, 2.4);
       }
+      const trail = [];
+      const reaction = { close: 0, far: 0 };
       function beginMood() {
         mood.clock = 0;
-        mood.follow = Math.random() < 0.5;
-        mood.until = mood.clock + (mood.follow ? random(2.2, 4.8) : random(3, 6.5));
+        mood.follow = false;
+        mood.until = random(8, 14);
+        reaction.close = reaction.far = 0;
+        trail.length = 0;
         pickLook();
+      }
+      function notePointer(event) {
+        const now = win.performance.now();
+        const last = trail[trail.length - 1];
+        if (last && now - last.t < 16) return;
+        trail.push({ x: event.clientX, y: event.clientY, t: now });
+        const cutoff = now - 460;
+        while (trail.length && trail[0].t < cutoff) trail.shift();
+      }
+      function isShaking() {
+        if (trail.length < 5) return false;
+        let path = 0;
+        let reversals = 0;
+        let prevX = 0;
+        let prevY = 0;
+        for (let i = 1; i < trail.length; i++) {
+          const dx = trail[i].x - trail[i - 1].x;
+          const dy = trail[i].y - trail[i - 1].y;
+          const step = Math.hypot(dx, dy);
+          path += step;
+          if (step > 5 && prevX * dx + prevY * dy < 0) reversals += 1;
+          if (step > 5) { prevX = dx; prevY = dy; }
+        }
+        const net = Math.hypot(trail[trail.length - 1].x - trail[0].x, trail[trail.length - 1].y - trail[0].y);
+        const span = (trail[trail.length - 1].t - trail[0].t) / 1000;
+        return span > 0.16 && reversals >= 2 && path > 160 && path > net * 1.85;
+      }
+      function updateShake(dt) {
+        const shaking = pointer.active && isShaking();
+        if (!shaking) {
+          reaction.close = Math.max(0, reaction.close - dt * 0.85);
+          reaction.far = Math.max(0, reaction.far - dt * 0.85);
+          return;
+        }
+        if (settings.followCursor) mood.until = Math.max(mood.until, mood.clock + 1.7);
+        if (settings.followCursor) mood.follow = true;
+        const centerX = bounds.left + bounds.width / 2;
+        const centerY = bounds.top + bounds.height / 2;
+        const near = Math.hypot(pointer.x - centerX, pointer.y - centerY) < Math.max(140, bounds.width * 2.6);
+        if (near) {
+          reaction.close += dt;
+          reaction.far = Math.max(0, reaction.far - dt);
+        } else {
+          reaction.far += dt;
+          reaction.close = Math.max(0, reaction.close - dt * 0.4);
+        }
+        if (reducedMotion.matches || settings.emotion !== 'neutral') return;
+        const next = reaction.close > 1.2 ? 'angry' : reaction.close > 0.2 ? 'scared' : reaction.far > 0.5 ? 'skeptical' : null;
+        if (!next) return;
+        if (face.name !== next) {
+          face.name = next;
+          applyEmotion();
+        }
+        face.until = face.clock + (next === 'angry' ? 1.7 : 1.25);
       }
       function updateMood(dt) {
         mood.clock += dt;
         if (!settings.followCursor) {
           if (mood.clock >= mood.holdUntil) pickLook();
+          updateShake(dt);
           return;
         }
-        // Hovering the mark itself gets its attention. A moving pointer elsewhere
-        // does not interrupt a period of looking around.
-        if (hovered) return;
-        if (mood.clock >= mood.until) {
-          mood.follow = !mood.follow;
-          mood.until = mood.clock + (mood.follow ? random(2.6, 5.5) : random(3.2, 7));
+        // Hovering the mark itself gets its attention. Otherwise the eye rarely
+        // chooses the pointer, and a moving pointer does not pull it back.
+        if (!hovered && mood.clock >= mood.until) {
+          mood.follow = !mood.follow && Math.random() < 0.16;
+          mood.until = mood.clock + (mood.follow ? random(1.1, 1.8) : random(8, 14));
           if (!mood.follow) pickLook();
-        } else if (!mood.follow && mood.clock >= mood.holdUntil) {
+        } else if (!hovered && !mood.follow && mood.clock >= mood.holdUntil) {
           pickLook();
         }
+        updateShake(dt);
       }
       function cursorGaze() {
         if (!pointer.active) return null;
@@ -567,6 +626,7 @@
       on(win, 'pointermove', event => {
         if (!pointer.active || event.clientX !== pointer.x || event.clientY !== pointer.y) wake();
         Object.assign(pointer, { x: event.clientX, y: event.clientY, active: true });
+        notePointer(event);
       }, { passive: true });
       const release = () => { pointer.active = false; wake(); setHovered(false); };
       on(doc.documentElement, 'pointerleave', release);

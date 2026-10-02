@@ -9,12 +9,12 @@ Edit the component to change the watermark everywhere, including the test page.
 Load the hosted file once. No local copy of the script is required:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/DDDASHXD/skxv-watermark@1.0.7/skxv-watermark.js" defer></script>
+<script src="https://cdn.jsdelivr.net/gh/DDDASHXD/skxv-watermark@1.0.8/skxv-watermark.js" defer></script>
 
 <skxv-watermark width="30" tilt="20" speed="1.5"></skxv-watermark>
 ```
 
-The public repository is [DDDASHXD/skxv-watermark](https://github.com/DDDASHXD/skxv-watermark). Pin a tag, as in `@1.0.7`, so a later push does not change pages that already use the watermark.
+The public repository is [DDDASHXD/skxv-watermark](https://github.com/DDDASHXD/skxv-watermark). Pin a tag, as in `@1.0.8`, so a later push does not change pages that already use the watermark.
 
 To work from this folder instead, load the local file:
 
@@ -86,7 +86,7 @@ outside the supported range are clamped.
 | `tilt` | `20` | Maximum horizontal 3D tilt in degrees, 0–45; vertical tilt is gentler |
 | `inertia` | `1` | Cursor response, 0.1–5; higher values respond more slowly |
 | `auto-blink` | `true` | Enables entrance blinks and random idle blinking |
-| `follow-cursor` | `true` | After the entrance, the eye alternates between watching the pointer and looking around on its own |
+| `follow-cursor` | `true` | The eye rarely watches the pointer on its own. Shaking the mouse makes it follow for a moment |
 | `pupil-lead` | `true` | Lets the pupil lead, with slower follow-through of the whole eye |
 | `idle-glances` | `true` | Occasional expressive glances when the cursor stops moving |
 | `resting-expression` | `true` | Occasionally relaxes the upper lid during inactivity |
@@ -104,12 +104,13 @@ Hover smoothly changes openness to 120% and increases pupil radius by 20%, then
 restores the selected values on leave. Blinking still fully closes the eye.
 The pupil is transparent, allowing the background to show through.
 
-After the entrance, attention comes and goes. For a few seconds the eye watches
-the pointer. Then it looks around on its own, holding each glance before choosing
-another, and a moving pointer does not pull it back. Hovering the mark makes it
-watch the pointer until the pointer leaves. While it is watching and the pointer
-is still, idle glances shift around that point and then return. Longer idle
-periods occasionally relax the upper lid by 8–14%. These
+After the entrance, the eye mostly looks around on its own. It only occasionally
+chooses to watch the pointer. Shaking the mouse makes it follow for a short
+time. Shaking close to the eye makes it look scared, and keeping that up makes
+it angry. Shaking farther away makes it look skeptical. Hovering the mark makes
+it watch the pointer until the pointer leaves. While it is watching and the
+pointer is still, idle glances shift around that point and then return. Longer
+idle periods occasionally relax the upper lid by 8–14%. These
 behaviors begin after the entrance and pause while the page is hidden. Their
 pace follows `speed`; reduced motion disables them. The test panel has separate
 toggles for all three behaviors.
