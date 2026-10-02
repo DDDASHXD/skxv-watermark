@@ -14,7 +14,7 @@ export interface WatermarkOptions {
   'idle-glances': boolean;
   'resting-expression': boolean;
   intro: boolean;
-  emotion: 'neutral' | 'happy' | 'angry' | 'scared' | 'skeptical';
+  emotion: 'neutral' | 'happy' | 'sad' | 'love' | 'angry' | 'scared' | 'skeptical';
 }
 
 export interface SkxvWatermarkElement extends HTMLElement, WatermarkOptions {

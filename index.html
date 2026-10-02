@@ -1,159 +1,345 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
-  <title>SKXV Watermark</title>
-  <style>
-    :root {
-      --background: #fff;
-    }
-
-    * { box-sizing: border-box; }
-
-    html, body { margin: 0; min-height: 100%; }
-
-    body {
-      min-height: 100svh;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 300px;
-      align-items: center;
-      background: var(--background);
-    }
-
-    .stage { min-width: 0; min-height: 100svh; display: grid; place-items: center; padding: 32px; }
-
-    .controls {
-      align-self: start;
-      margin: 20px 20px 20px 0;
-      border: 1px solid #dedede;
-      border-radius: 14px;
-      background: #fafafa;
-      color: #222;
-      font: 13px/1.5 system-ui, sans-serif;
-    }
-    summary { padding: 16px; cursor: pointer; font-weight: 600; }
-    .controls form { padding: 0 16px 16px; }
-    fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
-    .control { display: block; margin-bottom: 14px; }
-    .control > span { display: flex; justify-content: space-between; gap: 12px; }
-    output { color: #666; font-variant-numeric: tabular-nums; }
-    input[type="range"] { display: block; width: 100%; margin: 8px 0 0; accent-color: #222; }
-    select { display: block; width: 100%; margin-top: 8px; padding: 7px 8px; border: 1px solid #ccc; border-radius: 7px; background: #fff; color: inherit; font: inherit; }
-    .toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-    input[type="checkbox"] { accent-color: #222; }
-    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
-    button { border: 1px solid #ccc; background: #fff; color: #222; border-radius: 7px; padding: 9px 7px; font: inherit; cursor: pointer; }
-    button:hover { background: #eee; }
-    :focus-visible { outline: 2px solid #555; outline-offset: 4px; }
-    button:disabled { cursor: default; opacity: 0.45; }
-    .hint { color: #666; font-size: 12px; margin: 14px 0 0; }
-    @media (max-width: 900px) {
-      body { grid-template-columns: minmax(0, 1fr); }
-      .stage { min-height: 52svh; padding: 24px; }
-      .controls { width: min(400px, calc(100% - 32px)); margin: 0 auto 24px; }
-    }
-  </style>
-</head>
-<body>
-  <main class="stage">
-    <skxv-watermark id="watermark"></skxv-watermark>
-  </main>
-  <details class="controls" open>
-    <summary>Watermark controls</summary>
-    <form id="controls" onsubmit="return false">
-      <fieldset id="control-fields">
-        <label class="control" for="emotion"><span>Emotion</span>
-          <select id="emotion">
-            <option value="neutral">Neutral</option>
-            <option value="happy">Happy</option>
-            <option value="angry">Angry</option>
-            <option value="skeptical">Skeptical</option>
-            <option value="scared">Scared</option>
-          </select>
-        </label>
-        <label class="toggle"><input id="auto-blink" type="checkbox" checked> Automatic blinking</label>
-        <label class="toggle"><input id="follow-cursor" type="checkbox" checked> Follow cursor</label>
-        <label class="toggle"><input id="pupil-lead" type="checkbox" checked> Pupil leads the eye</label>
-        <label class="toggle"><input id="idle-glances" type="checkbox" checked> Expressive idle glances</label>
-        <label class="toggle"><input id="resting-expression" type="checkbox" checked> Relaxed resting expression</label>
-        <label class="control" for="openness"><span>Eye openness<output id="openness-value" for="openness">100%</output></span><input id="openness" type="range" min="0" max="120" step="1" value="100"></label>
-        <label class="control" for="size"><span>Eye width<output id="size-value" for="size">30 px</output></span><input id="size" type="range" min="10" max="900" step="10" value="30"></label>
-        <label class="control" for="pupil-size"><span>Pupil radius<output id="pupil-size-value" for="pupil-size">100</output></span><input id="pupil-size" type="range" min="40" max="115" step="1" value="100"></label>
-        <label class="control" for="speed"><span>Animation speed<output id="speed-value" for="speed">1.50×</output></span><input id="speed" type="range" min="0.25" max="2" step="0.05" value="1.5"></label>
-        <label class="control" for="inertia"><span>Cursor inertia<output id="inertia-value" for="inertia">1.0×</output></span><input id="inertia" type="range" min="0.4" max="2.5" step="0.1" value="1"></label>
-        <label class="control" for="tilt"><span>3D tilt<output id="tilt-value" for="tilt">20°</output></span><input id="tilt" type="range" min="0" max="20" step="0.5" value="20"></label>
-        <label class="control" for="interval"><span>Blink interval<output id="interval-value" for="interval">5.5 s</output></span><input id="interval" type="range" min="1" max="12" step="0.5" value="5.5"></label>
-        <label class="control" for="double-chance"><span>Double blink chance<output id="double-chance-value" for="double-chance">24%</output></span><input id="double-chance" type="range" min="0" max="100" step="1" value="24"></label>
-        <label class="control" for="blur"><span>Entrance blur<output id="blur-value" for="blur">6 px</output></span><input id="blur" type="range" min="0" max="18" step="0.5" value="6"></label>
-        <div class="actions">
-          <button id="blink-once" type="button">Blink once</button>
-          <button id="blink-twice" type="button">Blink twice</button>
-          <button id="replay" type="button">Replay entrance</button>
-          <button id="defaults" type="button">Reset controls</button>
-        </div>
-      </fieldset>
-      <p class="hint" id="control-note">Changes apply live. Entrance blur applies on replay. Blink intervals vary randomly around the selected value. Higher inertia means a slower response.</p>
-    </form>
-  </details>
-
-  <script src="./skxv-watermark.js"></script>
-  <script>
-    (() => {
-      const watermark = document.querySelector('#watermark');
-      const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-      const ranges = [
-        ['openness', 'openness', v => `${v}%`],
-        ['size', 'width', v => `${v} px`],
-        ['pupil-size', 'pupil-size', v => `${v}`],
-        ['speed', 'speed', v => `${v.toFixed(2)}×`],
-        ['inertia', 'inertia', v => `${v.toFixed(1)}×`],
-        ['tilt', 'tilt', v => `${v}°`],
-        ['interval', 'blink-interval', v => `${v.toFixed(1)} s`],
-        ['double-chance', 'double-blink-chance', v => `${v}%`],
-        ['blur', 'entrance-blur', v => `${v} px`],
-      ];
-      function sync() {
-        const options = watermark.options;
-        for (const [id, attribute, format] of ranges) {
-          document.getElementById(id).value = options[attribute];
-          document.getElementById(`${id}-value`).value = format(options[attribute]);
-        }
-        document.getElementById('emotion').value = options.emotion;
-        for (const attribute of ['auto-blink', 'follow-cursor', 'pupil-lead', 'idle-glances', 'resting-expression']) {
-          document.getElementById(attribute).checked = options[attribute];
-        }
-        for (const id of ['blink-once', 'blink-twice', 'replay']) document.getElementById(id).disabled = motion.matches;
-        document.getElementById('control-note').textContent = motion.matches
-          ? 'Reduced motion is enabled. Appearance controls remain available; animated previews are disabled.'
-          : 'Changes apply live. Hover opens the eye to 120% and enlarges the pupil. Entrance blur applies on replay. Higher inertia means a slower response.';
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>SKXV Watermark</title>
+    <style>
+      :root {
+        --background: #fff;
       }
-      for (const [id, attribute] of ranges) {
-        document.getElementById(id).addEventListener('input', event => {
-          watermark.setAttribute(attribute, event.target.value);
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        min-height: 100svh;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        align-items: center;
+      }
+
+      .stage {
+        min-width: 0;
+        min-height: 100svh;
+        display: grid;
+        place-items: center;
+        padding: 32px;
+      }
+
+      .controls {
+        align-self: start;
+        margin: 20px 20px 20px 0;
+        border: 1px solid #dedede;
+        border-radius: 14px;
+        background: #fafafa;
+        color: #222;
+        font:
+          13px/1.5 system-ui,
+          sans-serif;
+      }
+      summary {
+        padding: 16px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .controls form {
+        padding: 0 16px 16px;
+      }
+      fieldset {
+        padding: 0;
+        margin: 0;
+        border: 0;
+        min-width: 0;
+      }
+      .control {
+        display: block;
+        margin-bottom: 14px;
+      }
+      .control > span {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      output {
+        color: #666;
+        font-variant-numeric: tabular-nums;
+      }
+      input[type="range"] {
+        display: block;
+        width: 100%;
+        margin: 8px 0 0;
+        accent-color: #222;
+      }
+      select {
+        display: block;
+        width: 100%;
+        margin-top: 8px;
+        padding: 7px 8px;
+        border: 1px solid #ccc;
+        border-radius: 7px;
+        background: #fff;
+        color: inherit;
+        font: inherit;
+      }
+      .toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      input[type="checkbox"] {
+        accent-color: #222;
+      }
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      button {
+        border: 1px solid #ccc;
+        background: #fff;
+        color: #222;
+        border-radius: 7px;
+        padding: 9px 7px;
+        font: inherit;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #eee;
+      }
+      :focus-visible {
+        outline: 2px solid #555;
+        outline-offset: 4px;
+      }
+      button:disabled {
+        cursor: default;
+        opacity: 0.45;
+      }
+      .hint {
+        color: #666;
+        font-size: 12px;
+        margin: 14px 0 0;
+      }
+      @media (max-width: 900px) {
+        body {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .stage {
+          min-height: 52svh;
+          padding: 24px;
+        }
+        .controls {
+          width: min(400px, calc(100% - 32px));
+          margin: 0 auto 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="stage">
+      <skxv-watermark id="watermark"></skxv-watermark>
+    </main>
+    <details class="controls" open>
+      <summary>Watermark controls</summary>
+      <form id="controls" onsubmit="return false;">
+        <fieldset id="control-fields">
+          <label class="control" for="emotion"
+            ><span>Emotion</span>
+            <select id="emotion">
+              <option value="neutral">Neutral</option>
+              <option value="happy">Happy</option>
+              <option value="sad">Sad</option>
+              <option value="love">Love</option>
+              <option value="angry">Angry</option>
+              <option value="skeptical">Skeptical</option>
+              <option value="scared">Scared</option>
+            </select>
+          </label>
+          <label class="toggle"
+            ><input id="auto-blink" type="checkbox" checked /> Automatic blinking</label
+          >
+          <label class="toggle"
+            ><input id="follow-cursor" type="checkbox" checked /> Follow cursor</label
+          >
+          <label class="toggle"
+            ><input id="pupil-lead" type="checkbox" checked /> Pupil leads the
+            eye</label
+          >
+          <label class="toggle"
+            ><input id="idle-glances" type="checkbox" checked /> Expressive idle
+            glances</label
+          >
+          <label class="toggle"
+            ><input id="resting-expression" type="checkbox" checked /> Relaxed resting
+            expression</label
+          >
+          <label class="control" for="openness"
+            ><span
+              >Eye openness<output id="openness-value" for="openness"
+                >100%</output
+              ></span
+            ><input id="openness" type="range" min="0" max="120" step="1" value="100"
+          /></label>
+          <label class="control" for="size"
+            ><span>Eye width<output id="size-value" for="size">400 px</output></span
+            ><input id="size" type="range" min="10" max="900" step="10" value="400"
+          /></label>
+          <label class="control" for="pupil-size"
+            ><span
+              >Pupil radius<output id="pupil-size-value" for="pupil-size"
+                >100</output
+              ></span
+            ><input
+              id="pupil-size"
+              type="range"
+              min="40"
+              max="115"
+              step="1"
+              value="100"
+          /></label>
+          <label class="control" for="speed"
+            ><span
+              >Animation speed<output id="speed-value" for="speed">1.50×</output></span
+            ><input id="speed" type="range" min="0.25" max="2" step="0.05" value="1.5"
+          /></label>
+          <label class="control" for="inertia"
+            ><span
+              >Cursor inertia<output id="inertia-value" for="inertia"
+                >1.0×</output
+              ></span
+            ><input id="inertia" type="range" min="0.4" max="2.5" step="0.1" value="1"
+          /></label>
+          <label class="control" for="tilt"
+            ><span>3D tilt<output id="tilt-value" for="tilt">20°</output></span
+            ><input id="tilt" type="range" min="0" max="20" step="0.5" value="20"
+          /></label>
+          <label class="control" for="interval"
+            ><span
+              >Blink interval<output id="interval-value" for="interval"
+                >5.5 s</output
+              ></span
+            ><input id="interval" type="range" min="1" max="12" step="0.5" value="5.5"
+          /></label>
+          <label class="control" for="double-chance"
+            ><span
+              >Double blink chance<output id="double-chance-value" for="double-chance"
+                >24%</output
+              ></span
+            ><input
+              id="double-chance"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="24"
+          /></label>
+          <label class="control" for="blur"
+            ><span>Entrance blur<output id="blur-value" for="blur">6 px</output></span
+            ><input id="blur" type="range" min="0" max="18" step="0.5" value="6"
+          /></label>
+          <div class="actions">
+            <button id="blink-once" type="button">Blink once</button>
+            <button id="blink-twice" type="button">Blink twice</button>
+            <button id="replay" type="button">Replay entrance</button>
+            <button id="defaults" type="button">Reset controls</button>
+          </div>
+        </fieldset>
+        <p class="hint" id="control-note">
+          Changes apply live. Entrance blur applies on replay. Blink intervals vary
+          randomly around the selected value. Higher inertia means a slower response.
+        </p>
+      </form>
+    </details>
+
+    <script src="./skxv-watermark.js"></script>
+    <script>
+      (() => {
+        const watermark = document.querySelector("#watermark");
+        const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+        const ranges = [
+          ["openness", "openness", (v) => `${v}%`],
+          ["size", "width", (v) => `${v} px`],
+          ["pupil-size", "pupil-size", (v) => `${v}`],
+          ["speed", "speed", (v) => `${v.toFixed(2)}×`],
+          ["inertia", "inertia", (v) => `${v.toFixed(1)}×`],
+          ["tilt", "tilt", (v) => `${v}°`],
+          ["interval", "blink-interval", (v) => `${v.toFixed(1)} s`],
+          ["double-chance", "double-blink-chance", (v) => `${v}%`],
+          ["blur", "entrance-blur", (v) => `${v} px`],
+        ];
+        function sync() {
+          const options = watermark.options;
+          for (const [id, attribute, format] of ranges) {
+            document.getElementById(id).value = options[attribute];
+            document.getElementById(`${id}-value`).value = format(options[attribute]);
+          }
+          document.getElementById("emotion").value = options.emotion;
+          for (const attribute of [
+            "auto-blink",
+            "follow-cursor",
+            "pupil-lead",
+            "idle-glances",
+            "resting-expression",
+          ]) {
+            document.getElementById(attribute).checked = options[attribute];
+          }
+          for (const id of ["blink-once", "blink-twice", "replay"])
+            document.getElementById(id).disabled = motion.matches;
+          document.getElementById("control-note").textContent = motion.matches
+            ? "Reduced motion is enabled. Appearance controls remain available; animated previews are disabled."
+            : "Changes apply live. Hover opens the eye to 120% and enlarges the pupil. Entrance blur applies on replay. Higher inertia means a slower response.";
+        }
+        for (const [id, attribute] of ranges) {
+          document.getElementById(id).addEventListener("input", (event) => {
+            watermark.setAttribute(attribute, event.target.value);
+            sync();
+          });
+        }
+        document.getElementById("emotion").addEventListener("change", (event) => {
+          watermark.setAttribute("emotion", event.target.value);
+        });
+        for (const attribute of [
+          "auto-blink",
+          "follow-cursor",
+          "pupil-lead",
+          "idle-glances",
+          "resting-expression",
+        ]) {
+          document.getElementById(attribute).addEventListener("change", (event) => {
+            watermark.setAttribute(attribute, String(event.target.checked));
+          });
+        }
+        document
+          .getElementById("blink-once")
+          .addEventListener("click", () => watermark.blink());
+        document
+          .getElementById("blink-twice")
+          .addEventListener("click", () => watermark.blink(true));
+        document
+          .getElementById("replay")
+          .addEventListener("click", () => watermark.replay());
+        document.getElementById("defaults").addEventListener("click", () => {
+          watermark.resetOptions();
           sync();
         });
-      }
-      document.getElementById('emotion').addEventListener('change', event => {
-        watermark.setAttribute('emotion', event.target.value);
-      });
-      for (const attribute of ['auto-blink', 'follow-cursor', 'pupil-lead', 'idle-glances', 'resting-expression']) {
-        document.getElementById(attribute).addEventListener('change', event => {
-          watermark.setAttribute(attribute, String(event.target.checked));
+        watermark.addEventListener("watermark-error", (event) => {
+          document.getElementById("control-fields").disabled = true;
+          document.getElementById("control-note").textContent =
+            `${event.detail.message} Reload with an internet connection.`;
         });
-      }
-      document.getElementById('blink-once').addEventListener('click', () => watermark.blink());
-      document.getElementById('blink-twice').addEventListener('click', () => watermark.blink(true));
-      document.getElementById('replay').addEventListener('click', () => watermark.replay());
-      document.getElementById('defaults').addEventListener('click', () => { watermark.resetOptions(); sync(); });
-      watermark.addEventListener('watermark-error', event => {
-        document.getElementById('control-fields').disabled = true;
-        document.getElementById('control-note').textContent = `${event.detail.message} Reload with an internet connection.`;
-      });
-      watermark.addEventListener('watermark-motion-change', sync);
-      sync();
-    })();
-  </script>
-</body>
+        watermark.addEventListener("watermark-motion-change", sync);
+        sync();
+      })();
+    </script>
+  </body>
 </html>
