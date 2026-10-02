@@ -40,6 +40,7 @@
     .control > span { display: flex; justify-content: space-between; gap: 12px; }
     output { color: #666; font-variant-numeric: tabular-nums; }
     input[type="range"] { display: block; width: 100%; margin: 8px 0 0; accent-color: #222; }
+    select { display: block; width: 100%; margin-top: 8px; padding: 7px 8px; border: 1px solid #ccc; border-radius: 7px; background: #fff; color: inherit; font: inherit; }
     .toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
     input[type="checkbox"] { accent-color: #222; }
     .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
@@ -63,6 +64,15 @@
     <summary>Watermark controls</summary>
     <form id="controls" onsubmit="return false">
       <fieldset id="control-fields">
+        <label class="control" for="emotion"><span>Emotion</span>
+          <select id="emotion">
+            <option value="neutral">Neutral</option>
+            <option value="happy">Happy</option>
+            <option value="angry">Angry</option>
+            <option value="sad">Sad</option>
+            <option value="scared">Scared</option>
+          </select>
+        </label>
         <label class="toggle"><input id="auto-blink" type="checkbox" checked> Automatic blinking</label>
         <label class="toggle"><input id="follow-cursor" type="checkbox" checked> Follow cursor</label>
         <label class="toggle"><input id="pupil-lead" type="checkbox" checked> Pupil leads the eye</label>
@@ -110,6 +120,7 @@
           document.getElementById(id).value = options[attribute];
           document.getElementById(`${id}-value`).value = format(options[attribute]);
         }
+        document.getElementById('emotion').value = options.emotion;
         for (const attribute of ['auto-blink', 'follow-cursor', 'pupil-lead', 'idle-glances', 'resting-expression']) {
           document.getElementById(attribute).checked = options[attribute];
         }
@@ -124,6 +135,9 @@
           sync();
         });
       }
+      document.getElementById('emotion').addEventListener('change', event => {
+        watermark.setAttribute('emotion', event.target.value);
+      });
       for (const attribute of ['auto-blink', 'follow-cursor', 'pupil-lead', 'idle-glances', 'resting-expression']) {
         document.getElementById(attribute).addEventListener('change', event => {
           watermark.setAttribute(attribute, String(event.target.checked));

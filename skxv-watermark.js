@@ -21,7 +21,15 @@
     'resting-expression': ['restingExpression', true],
     intro: ['intro', true],
   };
-  const attributes = [...Object.keys(schema), 'color'];
+  // Lid curves at full opening. Blink and openness still scale these toward the closed line.
+  const emotions = {
+    neutral: { upperL: -92, upperM: -143, upperR: -92, lowerL: 92, lowerM: 143, lowerR: 92, pupil: 1 },
+    happy: { upperL: -70, upperM: -124, upperR: -70, lowerL: 52, lowerM: -24, lowerR: 52, pupil: 0.88 },
+    angry: { upperL: -124, upperM: -34, upperR: -124, lowerL: 48, lowerM: 62, lowerR: 48, pupil: 0.74 },
+    sad: { upperL: -156, upperM: -96, upperR: -34, lowerL: 72, lowerM: 128, lowerR: 168, pupil: 1.06 },
+    scared: { upperL: -168, upperM: -188, upperR: -168, lowerL: 168, lowerM: 188, lowerR: 168, pupil: 0.58 },
+  };
+  const attributes = [...Object.keys(schema), 'emotion', 'color'];
   function readOptions(host) {
     const options = {};
     for (const [name, [key, fallback, min, max, divisor = 1]] of Object.entries(schema)) {
@@ -33,6 +41,8 @@
         options[key] = Math.min(max, Math.max(min, Number.isFinite(value) ? value : fallback)) / divisor;
       }
     }
+    const emotion = (host.getAttribute('emotion') || 'neutral').trim().toLowerCase();
+    options.emotion = emotions[emotion] ? emotion : 'neutral';
     return options;
   }
 
@@ -140,7 +150,10 @@
       let intro;
       let blink;
       let blinkCall;
+      let shapeTween;
       let tracking = false;
+      const shape = { upperL: -92, upperM: -143, upperR: -92, lowerL: 92, lowerM: 143, lowerR: 92, pupil: 1 };
+      Object.assign(shape, emotions[settings.emotion]);
 
       function render() {
         const strength = reducedMotion.matches ? 0 : settings.tilt;
@@ -161,13 +174,13 @@
         const apex = state.x * 0.055;
         const contour = [
           'M -325 0',
-          `C -245 ${-92 * upper} ${apex - 105} ${-143 * upper} ${apex} ${-143 * upper}`,
-          `C ${apex + 105} ${-143 * upper} 245 ${-92 * upper} 325 0`,
-          `C 245 ${92 * lower} ${apex + 105} ${143 * lower} ${apex} ${143 * lower}`,
-          `C ${apex - 105} ${143 * lower} -245 ${92 * lower} -325 0 Z`,
+          `C -245 ${shape.upperL * upper} ${apex - 105} ${shape.upperM * upper} ${apex} ${shape.upperM * upper}`,
+          `C ${apex + 105} ${shape.upperM * upper} 245 ${shape.upperR * upper} 325 0`,
+          `C 245 ${shape.lowerR * lower} ${apex + 105} ${shape.lowerM * lower} ${apex} ${shape.lowerM * lower}`,
+          `C ${apex - 105} ${shape.lowerM * lower} -245 ${shape.lowerL * lower} -325 0 Z`,
         ].join(' ');
         eye.setAttribute('d', contour);
-        pupil.setAttribute('r', settings.pupilSize * (1 + 0.2 * hover.amount));
+        pupil.setAttribute('r', settings.pupilSize * shape.pupil * (1 + 0.2 * hover.amount));
         pupil.setAttribute('cx', state.x);
         pupil.setAttribute('cy', state.y);
         line.setAttribute('stroke-dashoffset', 1 - state.draw);
@@ -185,9 +198,62 @@
         Object.assign(state, { draw: 1, opacity: 1, blur: 0, upper: 1, lower: 1 });
         render();
         return {
-          update() { Object.assign(settings, readOptions(host)); render(); },
+          update() { Object.assign(settings, readOptions(host)); Object.assign(shape, emotions[settings.emotion]); render(); },
           replay() {}, blink() {}, preview() {}, destroy() {},
         };
+      }
+
+      const expressions = ['happy', 'angry', 'sad', 'scared'];
+      const face = { name: 'neutral', clock: 0, until: 0, next: random(8, 16) };
+      function activeEmotion() {
+        return settings.emotion === 'neutral' ? face.name : settings.emotion;
+      }
+      function resetFace() {
+        face.name = 'neutral';
+        face.clock = 0;
+        face.until = 0;
+        face.next = random(8, 16);
+        shapeTween?.kill();
+        shapeTween = null;
+        Object.assign(shape, emotions[settings.emotion]);
+      }
+      // Neutral is the resting face. A chosen emotion stays put. Otherwise the
+      // eye keeps neutral and only briefly tries another face.
+      function updateFace(dt) {
+        if (reducedMotion.matches || settings.emotion !== 'neutral') return;
+        face.clock += dt;
+        if (face.name !== 'neutral') {
+          if (face.clock < face.until) return;
+          face.name = 'neutral';
+          face.next = face.clock + random(9, 18);
+          applyEmotion();
+          return;
+        }
+        if (face.clock < face.next) return;
+        face.name = expressions[Math.floor(Math.random() * expressions.length)];
+        face.until = face.clock + random(1.6, 2.8);
+        applyEmotion();
+      }
+      function applyEmotion() {
+        const next = emotions[activeEmotion()];
+        shapeTween?.kill();
+        if (reducedMotion.matches) {
+          Object.assign(shape, next);
+          render();
+          return;
+        }
+        shapeTween = gsap.to(shape, {
+          upperL: next.upperL,
+          upperM: next.upperM,
+          upperR: next.upperR,
+          lowerL: next.lowerL,
+          lowerM: next.lowerM,
+          lowerR: next.lowerR,
+          pupil: next.pupil,
+          duration: 0.55,
+          ease: 'power2.inOut',
+          onUpdate: render,
+        }).timeScale(settings.speed);
       }
 
       function setHovered(active) {
@@ -340,7 +406,7 @@
 
       function tick(time, deltaTime) {
         const dt = Math.min(deltaTime / 1000, 0.05) * settings.speed;
-        if (tracking) { updateIdle(dt); follow(dt); }
+        if (tracking) { updateIdle(dt); updateFace(dt); follow(dt); }
         // Two stages of follow-through let the pupil arrive first, then the
         // whole eye catches up. This also applies to the scripted intro gaze.
         const aimBlend = settings.pupilLead ? 1 - Math.exp(-10 * dt) : 1;
@@ -423,6 +489,7 @@
         gsap.ticker.remove(tick);
         tracking = false;
         cancelEntranceWait();
+        resetFace();
         Object.assign(state, { draw: 0, opacity: 0, blur: settings.blur, upper: 0, lower: 0, x: 0, y: 0 });
         Object.assign(velocity, { x: 0, y: 0 });
         Object.assign(tilt, { x: 0, y: 0 });
@@ -509,9 +576,16 @@
           Object.assign(settings, readOptions(host));
           if (['openness', 'auto-blink', 'follow-cursor'].includes(name)) preview();
           if (name === 'intro') reset();
+          if (name === 'emotion') {
+            if (settings.emotion === 'neutral') {
+              face.name = 'neutral';
+              face.next = face.clock + random(8, 16);
+            }
+            applyEmotion();
+          }
           if (name === 'blink-interval') scheduleBlink();
           if (name === 'speed') {
-            for (const animation of [intro, blink, blinkCall, hoverTween]) animation?.timeScale(settings.speed);
+            for (const animation of [intro, blink, blinkCall, hoverTween, shapeTween]) animation?.timeScale(settings.speed);
           }
           measure();
           render();
@@ -524,7 +598,7 @@
           cancelEntranceWait();
           observer.disconnect();
           gsap.ticker.remove(tick);
-          for (const animation of [intro, blink, blinkCall, hoverTween]) animation?.kill();
+          for (const animation of [intro, blink, blinkCall, hoverTween, shapeTween]) animation?.kill();
         },
       };
   }
@@ -572,7 +646,9 @@
     }
     get options() {
       const parsed = readOptions(this);
-      return Object.fromEntries(Object.entries(schema).map(([name, [key, , , , divisor = 1]]) => [name, typeof parsed[key] === 'number' ? parsed[key] * divisor : parsed[key]]));
+      const values = Object.fromEntries(Object.entries(schema).map(([name, [key, , , , divisor = 1]]) => [name, typeof parsed[key] === 'number' ? parsed[key] * divisor : parsed[key]]));
+      values.emotion = parsed.emotion;
+      return values;
     }
     // Methods return a promise so callers can use them immediately after mounting.
     async replay() { await this.ready; this._animation?.replay(); }
@@ -583,6 +659,13 @@
   // React 19 assigns existing custom-element properties directly. Reflect them
   // to attributes so boolean false is explicit rather than a removed attribute
   // (which would restore our true default).
+  Object.defineProperty(SkxvWatermark.prototype, 'emotion', {
+    get() { return this.options.emotion; },
+    set(value) {
+      if (value === null || value === undefined || String(value).trim().toLowerCase() === 'neutral') this.removeAttribute('emotion');
+      else this.setAttribute('emotion', String(value));
+    },
+  });
   for (const name of Object.keys(schema)) {
     Object.defineProperty(SkxvWatermark.prototype, name, {
       get() { return this.options[name]; },
