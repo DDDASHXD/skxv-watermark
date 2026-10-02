@@ -360,7 +360,8 @@
           reaction.close = Math.max(0, reaction.close - dt * 0.4);
         }
         if (reducedMotion.matches || settings.emotion !== 'neutral') return;
-        const next = reaction.close > 1.2 ? 'angry' : reaction.close > 0.2 ? 'scared' : reaction.far > 0.5 ? 'skeptical' : null;
+        // Scared can arrive quickly. Anger and skepticism need the shaking to continue.
+        const next = reaction.close > 6 ? 'angry' : reaction.close > 0.35 ? 'scared' : reaction.far > 4.5 ? 'skeptical' : null;
         if (!next) return;
         if (face.name !== next) {
           face.name = next;
