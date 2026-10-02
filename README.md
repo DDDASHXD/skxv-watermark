@@ -9,12 +9,12 @@ Edit the component to change the watermark everywhere, including the test page.
 Load the hosted file once. No local copy of the script is required:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/DDDASHXD/skxv-watermark@1.0.6/skxv-watermark.js" defer></script>
+<script src="https://cdn.jsdelivr.net/gh/DDDASHXD/skxv-watermark@1.0.7/skxv-watermark.js" defer></script>
 
 <skxv-watermark width="30" tilt="20" speed="1.5"></skxv-watermark>
 ```
 
-The public repository is [DDDASHXD/skxv-watermark](https://github.com/DDDASHXD/skxv-watermark). Pin a tag, as in `@1.0.6`, so a later push does not change pages that already use the watermark.
+The public repository is [DDDASHXD/skxv-watermark](https://github.com/DDDASHXD/skxv-watermark). Pin a tag, as in `@1.0.7`, so a later push does not change pages that already use the watermark.
 
 To work from this folder instead, load the local file:
 
@@ -81,7 +81,7 @@ outside the supported range are clamped.
 | --- | --- | --- |
 | `width` | `30` | Width in CSS pixels, 10–10000; limited by available parent width |
 | `openness` | `100` | Resting eye openness, 0–120% |
-| `pupil-size` | `100` | Pupil radius in SVG units, 1–140 |
+| `pupil-size` | `100` | Pupil radius in SVG units, 1–140. Around that size, the pupil slowly widens and narrows on its own |
 | `speed` | `1.5` | Animation speed multiplier, 0.1–5 |
 | `tilt` | `20` | Maximum horizontal 3D tilt in degrees, 0–45; vertical tilt is gentler |
 | `inertia` | `1` | Cursor response, 0.1–5; higher values respond more slowly |

@@ -154,6 +154,7 @@
       let tracking = false;
       const shape = { upperL: -92, upperM: -143, upperR: -92, lowerL: 92, lowerM: 143, lowerR: 92, pupil: 1 };
       Object.assign(shape, emotions[settings.emotion]);
+      const pupilMotion = { scale: 1, target: 1, clock: 0, next: random(1.2, 3) };
 
       function render() {
         const strength = reducedMotion.matches ? 0 : settings.tilt;
@@ -180,7 +181,7 @@
           `C ${apex - 105} ${shape.lowerM * lower} -245 ${shape.lowerL * lower} -325 0 Z`,
         ].join(' ');
         eye.setAttribute('d', contour);
-        pupil.setAttribute('r', settings.pupilSize * shape.pupil * (1 + 0.2 * hover.amount));
+        pupil.setAttribute('r', settings.pupilSize * shape.pupil * pupilMotion.scale * (1 + 0.2 * hover.amount));
         pupil.setAttribute('cx', state.x);
         pupil.setAttribute('cy', state.y);
         line.setAttribute('stroke-dashoffset', 1 - state.draw);
@@ -216,6 +217,24 @@
         shapeTween?.kill();
         shapeTween = null;
         Object.assign(shape, emotions[settings.emotion]);
+        pupilMotion.scale = pupilMotion.target = 1;
+        pupilMotion.clock = 0;
+        pupilMotion.next = random(1.2, 3);
+      }
+      // A real pupil constricts faster than it widens, and it settles rather than snapping.
+      function updatePupil(dt) {
+        if (reducedMotion.matches) {
+          pupilMotion.scale = 1;
+          return;
+        }
+        pupilMotion.clock += dt;
+        if (pupilMotion.clock >= pupilMotion.next) {
+          const roll = Math.random();
+          pupilMotion.target = roll < 0.34 ? random(0.84, 0.94) : roll < 0.67 ? random(1.06, 1.16) : random(0.96, 1.04);
+          pupilMotion.next = pupilMotion.clock + random(1.6, 4.4);
+        }
+        const rate = pupilMotion.target < pupilMotion.scale ? 2.8 : 1.35;
+        pupilMotion.scale += (pupilMotion.target - pupilMotion.scale) * (1 - Math.exp(-rate * dt));
       }
       // Neutral is the resting face. A chosen emotion stays put. Otherwise the
       // eye keeps neutral and only briefly tries another face.
@@ -407,6 +426,7 @@
       function tick(time, deltaTime) {
         const dt = Math.min(deltaTime / 1000, 0.05) * settings.speed;
         if (tracking) { updateIdle(dt); updateFace(dt); follow(dt); }
+        updatePupil(dt);
         // Two stages of follow-through let the pupil arrive first, then the
         // whole eye catches up. This also applies to the scripted intro gaze.
         const aimBlend = settings.pupilLead ? 1 - Math.exp(-10 * dt) : 1;
