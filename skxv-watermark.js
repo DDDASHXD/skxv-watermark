@@ -207,14 +207,57 @@
         }).timeScale(settings.speed);
       }
 
-      function targetGaze() {
-        if (!pointer.active || !settings.followCursor) return { x: 0, y: 0 };
+      const mood = { follow: false, until: 0, clock: 0, lookX: 0, lookY: 0, holdUntil: 0 };
+      function pickLook() {
+        // A full glance, then occasionally a shorter look nearer the center.
+        if (Math.random() < 0.22) {
+          mood.lookX = random(-36, 36);
+          mood.lookY = random(-14, 14);
+        } else {
+          mood.lookX = random(40, 120) * (Math.random() < 0.5 ? -1 : 1);
+          mood.lookY = random(-28, 28);
+        }
+        mood.holdUntil = mood.clock + random(0.9, 2.4);
+      }
+      function beginMood() {
+        mood.clock = 0;
+        mood.follow = Math.random() < 0.5;
+        mood.until = mood.clock + (mood.follow ? random(2.2, 4.8) : random(3, 6.5));
+        pickLook();
+      }
+      function updateMood(dt) {
+        mood.clock += dt;
+        if (!settings.followCursor) {
+          if (mood.clock >= mood.holdUntil) pickLook();
+          return;
+        }
+        // Hovering the mark itself gets its attention. A moving pointer elsewhere
+        // does not interrupt a period of looking around.
+        if (hovered) return;
+        if (mood.clock >= mood.until) {
+          mood.follow = !mood.follow;
+          mood.until = mood.clock + (mood.follow ? random(2.6, 5.5) : random(3.2, 7));
+          if (!mood.follow) pickLook();
+        } else if (!mood.follow && mood.clock >= mood.holdUntil) {
+          pickLook();
+        }
+      }
+      function cursorGaze() {
+        if (!pointer.active) return null;
         const reach = Math.max(100, bounds.width * 0.65);
         const nx = (pointer.x - bounds.left - bounds.width / 2) / reach;
         const ny = (pointer.y - bounds.top - bounds.height / 2) / reach;
         const distance = Math.hypot(nx, ny);
         const scale = distance > 0 ? Math.tanh(distance) / distance : 0;
         return { x: nx * scale * 126, y: ny * scale * 32 };
+      }
+      function targetGaze() {
+        const watching = settings.followCursor && (hovered || mood.follow);
+        if (watching) {
+          const cursor = cursorGaze();
+          if (cursor) return cursor;
+        }
+        return { x: mood.lookX, y: mood.lookY };
       }
 
       function wake() {
@@ -267,9 +310,16 @@
       }
 
       function follow(dt) {
+        updateMood(dt);
         const target = targetGaze();
-        target.x = clamp(target.x + idle.x, -126, 126);
-        target.y = clamp(target.y + idle.y, -32, 32);
+        const watching = settings.followCursor && (hovered || mood.follow);
+        if (!watching) {
+          target.x = clamp(target.x, -126, 126);
+          target.y = clamp(target.y, -32, 32);
+        } else {
+          target.x = clamp(target.x + idle.x, -126, 126);
+          target.y = clamp(target.y + idle.y, -32, 32);
+        }
         // An underdamped spring preserves momentum on direction changes. GSAP's
         // ticker supplies the clock; the exact solution behaves the same at any Hz.
         const damping = 10.8 / settings.inertia;
@@ -339,6 +389,7 @@
         blinkCall?.kill();
         intro = blink = blinkCall = null;
         Object.assign(state, { draw: 1, opacity: 1, blur: 0, upper: 1, lower: 1 });
+        beginMood();
         tracking = !reducedMotion.matches;
         if (tracking && !doc.hidden) gsap.ticker.add(tick);
         render();
@@ -347,6 +398,7 @@
 
       function startTracking() {
         wake();
+        beginMood();
         tracking = true;
         scheduleBlink();
       }
