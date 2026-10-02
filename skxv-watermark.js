@@ -351,6 +351,13 @@
         scheduleBlink();
       }
 
+      let entranceObserver;
+      function cancelEntranceWait() {
+        entranceObserver?.disconnect();
+        entranceObserver = null;
+      }
+      // The entrance stays hidden until any part of the mark is on screen.
+      // An explicit replay uses the same rule, so it does not play offscreen.
       function reset() {
         wake();
         idle.rest = 0;
@@ -363,10 +370,25 @@
         intro = blink = blinkCall = null;
         gsap.ticker.remove(tick);
         tracking = false;
+        cancelEntranceWait();
         Object.assign(state, { draw: 0, opacity: 0, blur: settings.blur, upper: 0, lower: 0, x: 0, y: 0 });
         Object.assign(velocity, { x: 0, y: 0 });
         Object.assign(tilt, { x: 0, y: 0 });
         Object.assign(headAim, { x: 0, y: 0 });
+        if (settings.intro && !reducedMotion.matches) {
+          const rect = host.getBoundingClientRect();
+          const inView = rect.bottom > 0 && rect.top < win.innerHeight && rect.right > 0 && rect.left < win.innerWidth;
+          if (!inView) {
+            render();
+            entranceObserver = new win.IntersectionObserver(entries => {
+              if (!entries.some(entry => entry.isIntersecting)) return;
+              cancelEntranceWait();
+              reset();
+            });
+            entranceObserver.observe(host);
+            return;
+          }
+        }
         if (reducedMotion.matches || !settings.intro) {
           Object.assign(state, { draw: 1, opacity: 1, blur: 0, upper: 1, lower: 1 });
           render();
@@ -447,6 +469,7 @@
         blink(double) { preview(); playBlink(double); },
         destroy() {
           events.abort();
+          cancelEntranceWait();
           observer.disconnect();
           gsap.ticker.remove(tick);
           for (const animation of [intro, blink, blinkCall, hoverTween]) animation?.kill();
