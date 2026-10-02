@@ -26,7 +26,7 @@
     neutral: { upperL: -92, upperM: -143, upperR: -92, lowerL: 92, lowerM: 143, lowerR: 92, pupil: 1 },
     happy: { upperL: -70, upperM: -124, upperR: -70, lowerL: 52, lowerM: -24, lowerR: 52, pupil: 0.88 },
     angry: { upperL: -124, upperM: -34, upperR: -124, lowerL: 48, lowerM: 62, lowerR: 48, pupil: 0.74 },
-    sad: { upperL: -156, upperM: -96, upperR: -34, lowerL: 72, lowerM: 128, lowerR: 168, pupil: 1.06 },
+    sad: { upperL: -46, upperM: -78, upperR: -46, lowerL: 30, lowerM: 136, lowerR: 30, pupil: 1.12 },
     scared: { upperL: -168, upperM: -188, upperR: -168, lowerL: 168, lowerM: 188, lowerR: 168, pupil: 0.58 },
   };
   const attributes = [...Object.keys(schema), 'emotion', 'color'];

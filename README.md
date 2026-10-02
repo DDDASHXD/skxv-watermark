@@ -9,12 +9,12 @@ Edit the component to change the watermark everywhere, including the test page.
 Load the hosted file once. No local copy of the script is required:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/DDDASHXD/skxv-watermark@1.0.3/skxv-watermark.js" defer></script>
+<script src="https://cdn.jsdelivr.net/gh/DDDASHXD/skxv-watermark@1.0.4/skxv-watermark.js" defer></script>
 
 <skxv-watermark width="30" tilt="20" speed="1.5"></skxv-watermark>
 ```
 
-The public repository is [DDDASHXD/skxv-watermark](https://github.com/DDDASHXD/skxv-watermark). Pin a tag, as in `@1.0.3`, so a later push does not change pages that already use the watermark.
+The public repository is [DDDASHXD/skxv-watermark](https://github.com/DDDASHXD/skxv-watermark). Pin a tag, as in `@1.0.4`, so a later push does not change pages that already use the watermark.
 
 To work from this folder instead, load the local file:
 
