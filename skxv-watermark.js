@@ -27,6 +27,7 @@
     happy: { upperL: -70, upperM: -124, upperR: -70, lowerL: 52, lowerM: -24, lowerR: 52, pupil: 0.88 },
     angry: { upperL: -124, upperM: -34, upperR: -124, lowerL: 48, lowerM: 62, lowerR: 48, pupil: 0.74 },
     sad: { upperL: -46, upperM: -78, upperR: -46, lowerL: 30, lowerM: 136, lowerR: 30, pupil: 1.12 },
+    skeptical: { upperL: -78, upperM: -46, upperR: -16, lowerL: 32, lowerM: 40, lowerR: 56, pupil: 0.84 },
     scared: { upperL: -168, upperM: -188, upperR: -168, lowerL: 168, lowerM: 188, lowerR: 168, pupil: 0.58 },
   };
   const attributes = [...Object.keys(schema), 'emotion', 'color'];
@@ -203,7 +204,7 @@
         };
       }
 
-      const expressions = ['happy', 'angry', 'sad', 'scared'];
+      const expressions = ['happy', 'angry', 'sad', 'scared', 'skeptical'];
       const face = { name: 'neutral', clock: 0, until: 0, next: random(8, 16) };
       function activeEmotion() {
         return settings.emotion === 'neutral' ? face.name : settings.emotion;
