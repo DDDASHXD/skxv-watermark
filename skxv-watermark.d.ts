@@ -30,7 +30,7 @@ export type WatermarkAttributes = {
   [Key in keyof WatermarkOptions]?: WatermarkOptions[Key] extends boolean
     ? boolean | '' | 'true' | 'false' | '0' | 'off'
     : number | string;
-} & { color?: string };
+} & { color?: string; 'primary-color'?: string };
 
 declare global {
   interface HTMLElementTagNameMap {

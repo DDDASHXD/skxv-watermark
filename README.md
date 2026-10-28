@@ -4,13 +4,22 @@
 animation. `index.html` imports that file and provides the test controls. Edit the
 component to change the watermark everywhere, including the test page.
 
+Set `primary-color` to any CSS color, including a site token such as `var(--purple)`:
+
+```html
+<skxv-watermark primary-color="var(--purple)"></skxv-watermark>
+```
+
+`primary-color` takes precedence over `color`. Without either attribute, the eye
+inherits CSS `color`. Attribute changes update the color immediately.
+
 ## Plain HTML
 
 Load the hosted file once. No local copy of the script is required:
 
 ```html
 <script
-  src="https://cdn.jsdelivr.net/gh/DDDASHXD/skxv-watermark@1.0.10/skxv-watermark.js"
+  src="https://cdn.jsdelivr.net/gh/DDDASHXD/skxv-watermark@1.0.11/skxv-watermark.js"
   defer
 ></script>
 
@@ -19,7 +28,7 @@ Load the hosted file once. No local copy of the script is required:
 
 The public repository is
 [DDDASHXD/skxv-watermark](https://github.com/DDDASHXD/skxv-watermark). Pin a tag, as in
-`@1.0.10`, so a later push does not change pages that already use the watermark.
+`@1.0.11`, so a later push does not change pages that already use the watermark.
 
 To work from this folder instead, load the local file:
 

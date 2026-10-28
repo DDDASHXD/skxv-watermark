@@ -175,7 +175,7 @@
     }
     return outlinePath(points);
   }
-  const attributes = [...Object.keys(schema), 'emotion', 'color'];
+  const attributes = [...Object.keys(schema), 'emotion', 'color', 'primary-color'];
   function readOptions(host) {
     const options = {};
     for (const [name, [key, fallback, min, max, divisor = 1]] of Object.entries(schema)) {
@@ -1043,7 +1043,7 @@
     }
     _applyAppearance() {
       this.style.setProperty('--skxv-width', `${readOptions(this).size}px`);
-      const color = this.getAttribute('color');
+      const color = this.getAttribute('primary-color') || this.getAttribute('color');
       if (color) this.style.setProperty('--skxv-color', color);
       else this.style.removeProperty('--skxv-color');
     }
